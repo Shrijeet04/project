@@ -1,53 +1,51 @@
-import { useEffect } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { Toaster } from "sonner";
+import { SupplyChainProvider, useSupplyChain, roleThemes } from "@/context/SupplyChainContext";
+import Sidebar from "@/components/layout/Sidebar";
+import FarmerDashboard from "@/pages/FarmerDashboard";
+import WarehouseDashboard from "@/pages/WarehouseDashboard";
+import RetailerDashboard from "@/pages/RetailerDashboard";
+import ProfilePage from "@/pages/ProfilePage";
+import { Loader2 } from "lucide-react";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+function AppContent() {
+  const { activeRole, activeTab, loading } = useSupplyChain();
+  const theme = roleThemes[activeRole];
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+  const renderContent = () => {
+    if (activeTab === 'profile') return <ProfilePage />;
+    switch (activeRole) {
+      case 'farmer': return <FarmerDashboard />;
+      case 'warehouse': return <WarehouseDashboard />;
+      case 'retailer': return <RetailerDashboard />;
+      default: return <FarmerDashboard />;
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <div className={`min-h-screen ${theme.bg} role-transition font-body`} data-testid="app-root">
+      <Sidebar />
+      <main className="ml-64 p-8 min-h-screen" data-testid="main-content">
+        {loading ? (
+          <div className="flex items-center justify-center h-[60vh]">
+            <Loader2 className={`w-8 h-8 animate-spin ${theme.primaryText}`} />
+          </div>
+        ) : (
+          <div className="animate-fade-in max-w-[1400px]">
+            {renderContent()}
+          </div>
+        )}
+      </main>
     </div>
   );
-};
+}
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <SupplyChainProvider>
+      <AppContent />
+      <Toaster position="top-right" richColors closeButton />
+    </SupplyChainProvider>
   );
 }
 
