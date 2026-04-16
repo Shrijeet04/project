@@ -12,8 +12,12 @@ import {
 } from '@/components/ui/table';
 import {
   DollarSign, TrendingUp, ShoppingCart, Package, Plus,
-  ArrowUpRight, Check, Truck, PackageOpen,
+  ArrowUpRight, Check, Truck, PackageOpen, Search, Filter,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const theme = roleThemes.retailer;
@@ -78,8 +82,23 @@ function OrderManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderQty, setOrderQty] = useState('');
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
 
-  const available = inventory.filter(i => i.status === 'available' && i.quantity > 0);
+  const allAvailable = inventory.filter(i => i.status === 'available' && i.quantity > 0);
+  const categories = [...new Set(allAvailable.map(i => i.category))];
+
+  const available = allAvailable
+    .filter(i => search === '' || i.name.toLowerCase().includes(search.toLowerCase()) || i.farmer_name.toLowerCase().includes(search.toLowerCase()))
+    .filter(i => categoryFilter === 'all' || i.category === categoryFilter)
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'price_asc') return a.price_per_unit - b.price_per_unit;
+      if (sortBy === 'price_desc') return b.price_per_unit - a.price_per_unit;
+      if (sortBy === 'quantity') return b.quantity - a.quantity;
+      return 0;
+    });
 
   const openOrderDialog = (item) => {
     setSelectedItem(item);
@@ -106,10 +125,43 @@ function OrderManagement() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h2 className={`font-heading text-2xl sm:text-3xl font-extrabold tracking-tight ${theme.textMain}`}>Order Management</h2>
         <p className={`text-sm mt-1 ${theme.textMuted}`}>Browse available stock and place orders</p>
       </div>
+
+      {/* Search & Filter Bar */}
+      <div className={`${theme.cardClass} brutalist-card !p-4 mb-6 flex flex-wrap items-center gap-3`} data-testid="order-filter-bar">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${theme.textMuted}`} />
+          <Input data-testid="order-search" placeholder="Search produce or farm..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className={`w-4 h-4 ${theme.textMuted}`} />
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger data-testid="order-filter-category" className="w-[150px]"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(c => <SelectItem key={c} value={c}>{c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger data-testid="order-sort" className="w-[140px]"><SelectValue placeholder="Sort" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name A-Z</SelectItem>
+              <SelectItem value="price_asc">Price Low-High</SelectItem>
+              <SelectItem value="price_desc">Price High-Low</SelectItem>
+              <SelectItem value="quantity">Most Stock</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {(search || categoryFilter !== 'all') && (
+          <button data-testid="order-clear-filters" onClick={() => { setSearch(''); setCategoryFilter('all'); setSortBy('name'); }}
+            className={`text-xs font-medium ${theme.primaryText} hover:underline`}>Clear filters</button>
+        )}
+        <span className={`text-xs ${theme.textMuted} ml-auto`}>{available.length} of {allAvailable.length} items</span>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {available.length === 0 && (
           <div className={`${theme.cardClass} col-span-full text-center py-12`}>
@@ -232,6 +284,8 @@ function SalesTracking() {
   const { sales, addSale } = useSupplyChain();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ item_name: '', quantity: '', sale_price: '' });
+  const [search, setSearch] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, dir: 'asc' });
 
   const handleSubmit = async () => {
     try {
@@ -241,12 +295,31 @@ function SalesTracking() {
     } catch {}
   };
 
-  const totalRevenue = sales.reduce((sum, s) => sum + s.sale_price, 0);
-  const totalUnits = sales.reduce((sum, s) => sum + s.quantity, 0);
+  const handleSort = (key) => {
+    setSortConfig(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }));
+  };
+
+  const SortIcon = ({ col }) => {
+    if (sortConfig.key !== col) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortConfig.dir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
+  const filtered = sales
+    .filter(s => search === '' || s.item_name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      const aVal = sortConfig.key === 'created_at' ? new Date(a[sortConfig.key]).getTime() : a[sortConfig.key];
+      const bVal = sortConfig.key === 'created_at' ? new Date(b[sortConfig.key]).getTime() : b[sortConfig.key];
+      const cmp = typeof aVal === 'number' ? aVal - bVal : String(aVal).localeCompare(String(bVal));
+      return sortConfig.dir === 'asc' ? cmp : -cmp;
+    });
+
+  const totalRevenue = filtered.reduce((sum, s) => sum + s.sale_price, 0);
+  const totalUnits = filtered.reduce((sum, s) => sum + s.quantity, 0);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className={`font-heading text-2xl sm:text-3xl font-extrabold tracking-tight ${theme.textMain}`}>Sales Tracking</h2>
           <p className={`text-sm mt-1 ${theme.textMuted}`}>Log and track daily sales</p>
@@ -256,7 +329,7 @@ function SalesTracking() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-2 gap-6 mb-6">
         <div className={`${theme.cardClass} brutalist-card`}>
           <p className={`overline ${theme.textMuted} mb-2`}>Total Revenue</p>
           <p className={`font-heading text-3xl font-extrabold tracking-tight ${theme.textMain}`}>${totalRevenue.toLocaleString()}</p>
@@ -267,20 +340,38 @@ function SalesTracking() {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className={`${theme.cardClass} brutalist-card !p-4 mb-6 flex items-center gap-3`} data-testid="sales-search-bar">
+        <div className="relative flex-1">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${theme.textMuted}`} />
+          <Input data-testid="sales-search" placeholder="Search by item name..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        {search && <button data-testid="sales-clear-search" onClick={() => setSearch('')} className={`text-xs font-medium ${theme.primaryText} hover:underline`}>Clear</button>}
+        <span className={`text-xs ${theme.textMuted}`}>{filtered.length} of {sales.length} records</span>
+      </div>
+
       <div className={`${theme.cardClass} brutalist-card !p-0 overflow-hidden`} data-testid="sales-table">
         <Table>
           <TableHeader>
             <TableRow className="border-black/10">
-              <TableHead className={theme.textMuted}>Item</TableHead>
-              <TableHead className={theme.textMuted}>Quantity</TableHead>
-              <TableHead className={theme.textMuted}>Revenue</TableHead>
-              <TableHead className={theme.textMuted}>Date</TableHead>
+              <TableHead className={`${theme.textMuted} cursor-pointer select-none`} onClick={() => handleSort('item_name')}>
+                <span className="flex items-center">Item<SortIcon col="item_name" /></span>
+              </TableHead>
+              <TableHead className={`${theme.textMuted} cursor-pointer select-none`} onClick={() => handleSort('quantity')}>
+                <span className="flex items-center">Quantity<SortIcon col="quantity" /></span>
+              </TableHead>
+              <TableHead className={`${theme.textMuted} cursor-pointer select-none`} onClick={() => handleSort('sale_price')}>
+                <span className="flex items-center">Revenue<SortIcon col="sale_price" /></span>
+              </TableHead>
+              <TableHead className={`${theme.textMuted} cursor-pointer select-none`} onClick={() => handleSort('created_at')}>
+                <span className="flex items-center">Date<SortIcon col="created_at" /></span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sales.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className={`text-center py-12 ${theme.textMuted}`}>No sales recorded yet.</TableCell></TableRow>
-            ) : sales.map((sale) => (
+            {filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={4} className={`text-center py-12 ${theme.textMuted}`}>{sales.length === 0 ? 'No sales recorded yet.' : 'No sales match your search.'}</TableCell></TableRow>
+            ) : filtered.map((sale) => (
               <TableRow key={sale.id} className="border-black/5" data-testid={`sale-row-${sale.id}`}>
                 <TableCell className={`font-medium ${theme.textMain}`}>{sale.item_name}</TableCell>
                 <TableCell className={theme.textMain}>{sale.quantity} {sale.unit}</TableCell>

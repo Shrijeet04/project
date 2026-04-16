@@ -7,8 +7,9 @@ import {
 } from '@/components/ui/table';
 import {
   Gauge, Truck, AlertTriangle, Thermometer, Droplets, RefreshCw,
-  ArrowRight, Package, ShieldCheck, Box, Activity,
+  ArrowRight, Package, ShieldCheck, Box, Activity, Search,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const theme = roleThemes.warehouse;
 
@@ -129,14 +130,19 @@ function WarehouseOverview() {
 
 function StockManagement() {
   const { orders, updateOrderStatus } = useSupplyChain();
+  const [search, setSearch] = useState('');
 
   const statusFlow = { awaiting: 'processing', processing: 'dispatched' };
   const orderStatusFlow = { pending: 'confirmed', confirmed: 'in_transit', in_transit: 'delivered' };
 
+  const filteredOrders = orders.filter(o =>
+    search === '' || o.item_name.toLowerCase().includes(search.toLowerCase()) || o.retailer_name.toLowerCase().includes(search.toLowerCase())
+  );
+
   const grouped = {
-    awaiting: orders.filter(o => o.warehouse_status === 'awaiting'),
-    processing: orders.filter(o => o.warehouse_status === 'processing'),
-    dispatched: orders.filter(o => o.warehouse_status === 'dispatched'),
+    awaiting: filteredOrders.filter(o => o.warehouse_status === 'awaiting'),
+    processing: filteredOrders.filter(o => o.warehouse_status === 'processing'),
+    dispatched: filteredOrders.filter(o => o.warehouse_status === 'dispatched'),
   };
 
   const handleAdvance = async (order) => {
@@ -156,9 +162,22 @@ function StockManagement() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h2 className={`font-heading text-2xl sm:text-3xl font-extrabold tracking-tight ${theme.textMain}`}>Stock Management</h2>
-        <p className={`text-sm mt-1 ${theme.textMuted}`}>Track incoming, processing, and outgoing shipments</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className={`font-heading text-2xl sm:text-3xl font-extrabold tracking-tight ${theme.textMain}`}>Stock Management</h2>
+          <p className={`text-sm mt-1 ${theme.textMuted}`}>Track incoming, processing, and outgoing shipments</p>
+        </div>
+      </div>
+      <div className={`${theme.cardClass} !p-4 mb-6 flex items-center gap-3`} data-testid="stock-search-bar">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+          <Input data-testid="stock-search" placeholder="Search by item or retailer..." value={search} onChange={e => setSearch(e.target.value)}
+            className="pl-9 bg-[#0D0E14] border-[#272B3B] text-[#F1F5F9] placeholder:text-[#94A3B8]" />
+        </div>
+        {search && (
+          <button data-testid="stock-clear-search" onClick={() => setSearch('')} className="text-xs text-[#60A5FA] hover:underline">Clear</button>
+        )}
+        <span className="text-xs text-[#94A3B8]">{filteredOrders.length} orders</span>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {columnConfig.map(({ key, label, color, dotColor }) => (

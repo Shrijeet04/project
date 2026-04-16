@@ -16,6 +16,7 @@ import {
 import {
   Sprout, DollarSign, Clock, Plus, Pencil, Trash2,
   TrendingUp, Package, CalendarDays, Check, X, Bell,
+  Search, ArrowUpDown, ArrowUp, ArrowDown, Filter,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -80,6 +81,10 @@ function ProduceListing() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState({ name: '', quantity: '', unit: 'kg', quality_grade: 'A', price_per_unit: '', category: 'vegetables', farmer_name: 'Green Valley Farm' });
+  const [search, setSearch] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortConfig, setSortConfig] = useState({ key: null, dir: 'asc' });
 
   const resetForm = () => setForm({ name: '', quantity: '', unit: 'kg', quality_grade: 'A', price_per_unit: '', category: 'vegetables', farmer_name: 'Green Valley Farm' });
 
@@ -99,11 +104,31 @@ function ProduceListing() {
     } catch {}
   };
 
+  const handleSort = (key) => {
+    setSortConfig(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }));
+  };
+
+  const SortIcon = ({ col }) => {
+    if (sortConfig.key !== col) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortConfig.dir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
+  const filtered = inventory
+    .filter(i => search === '' || i.name.toLowerCase().includes(search.toLowerCase()) || i.farmer_name.toLowerCase().includes(search.toLowerCase()))
+    .filter(i => gradeFilter === 'all' || i.quality_grade === gradeFilter)
+    .filter(i => statusFilter === 'all' || i.status === statusFilter)
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      const aVal = a[sortConfig.key]; const bVal = b[sortConfig.key];
+      const cmp = typeof aVal === 'number' ? aVal - bVal : String(aVal).localeCompare(String(bVal));
+      return sortConfig.dir === 'asc' ? cmp : -cmp;
+    });
+
   const gradeColors = { 'A+': 'bg-emerald-100 text-emerald-800', 'A': 'bg-green-100 text-green-800', 'B': 'bg-amber-100 text-amber-800', 'C': 'bg-orange-100 text-orange-800', 'D': 'bg-red-100 text-red-800' };
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className={`font-heading text-2xl sm:text-3xl font-extrabold tracking-tight ${theme.textMain}`}>Produce Listing</h2>
           <p className={`text-sm mt-1 ${theme.textMuted}`}>Manage your crop listings and pricing</p>
@@ -113,22 +138,65 @@ function ProduceListing() {
         </button>
       </div>
 
+      {/* Search & Filter Bar */}
+      <div className={`${theme.cardClass} !p-4 mb-6 flex flex-wrap items-center gap-3`} data-testid="produce-filter-bar">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${theme.textMuted}`} />
+          <Input data-testid="produce-search" placeholder="Search by name or farm..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className={`w-4 h-4 ${theme.textMuted}`} />
+          <Select value={gradeFilter} onValueChange={setGradeFilter}>
+            <SelectTrigger data-testid="produce-filter-grade" className="w-[120px]"><SelectValue placeholder="Grade" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Grades</SelectItem>
+              <SelectItem value="A+">A+</SelectItem>
+              <SelectItem value="A">A</SelectItem>
+              <SelectItem value="B">B</SelectItem>
+              <SelectItem value="C">C</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger data-testid="produce-filter-status" className="w-[130px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="reserved">Reserved</SelectItem>
+              <SelectItem value="sold">Sold</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {(search || gradeFilter !== 'all' || statusFilter !== 'all') && (
+          <button data-testid="produce-clear-filters" onClick={() => { setSearch(''); setGradeFilter('all'); setStatusFilter('all'); setSortConfig({ key: null, dir: 'asc' }); }}
+            className={`text-xs font-medium ${theme.primaryText} hover:underline`}>Clear filters</button>
+        )}
+        <span className={`text-xs ${theme.textMuted} ml-auto`}>{filtered.length} of {inventory.length} items</span>
+      </div>
+
       <div className={`${theme.cardClass} !p-0 overflow-hidden`}>
         <Table>
           <TableHeader>
             <TableRow className="border-[#E2E8DE]">
-              <TableHead className={`${theme.textMuted} font-semibold`}>Produce</TableHead>
-              <TableHead className={`${theme.textMuted} font-semibold`}>Quantity</TableHead>
-              <TableHead className={`${theme.textMuted} font-semibold`}>Grade</TableHead>
-              <TableHead className={`${theme.textMuted} font-semibold`}>Price/Unit</TableHead>
+              <TableHead className={`${theme.textMuted} font-semibold cursor-pointer select-none`} onClick={() => handleSort('name')}>
+                <span className="flex items-center">Produce<SortIcon col="name" /></span>
+              </TableHead>
+              <TableHead className={`${theme.textMuted} font-semibold cursor-pointer select-none`} onClick={() => handleSort('quantity')}>
+                <span className="flex items-center">Quantity<SortIcon col="quantity" /></span>
+              </TableHead>
+              <TableHead className={`${theme.textMuted} font-semibold cursor-pointer select-none`} onClick={() => handleSort('quality_grade')}>
+                <span className="flex items-center">Grade<SortIcon col="quality_grade" /></span>
+              </TableHead>
+              <TableHead className={`${theme.textMuted} font-semibold cursor-pointer select-none`} onClick={() => handleSort('price_per_unit')}>
+                <span className="flex items-center">Price/Unit<SortIcon col="price_per_unit" /></span>
+              </TableHead>
               <TableHead className={`${theme.textMuted} font-semibold`}>Status</TableHead>
               <TableHead className={`${theme.textMuted} font-semibold text-right`}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {inventory.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className={`text-center py-12 ${theme.textMuted}`}>No produce listed yet. Add your first crop above.</TableCell></TableRow>
-            ) : inventory.map((item) => (
+            {filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={6} className={`text-center py-12 ${theme.textMuted}`}>{inventory.length === 0 ? 'No produce listed yet. Add your first crop above.' : 'No items match your filters.'}</TableCell></TableRow>
+            ) : filtered.map((item) => (
               <TableRow key={item.id} className="border-[#E2E8DE]" data-testid={`produce-row-${item.id}`}>
                 <TableCell>
                   <div className="flex items-center gap-3">
