@@ -39,3 +39,9 @@ Build a fully functional, interactive Smart Inventory & Supply Chain Management 
 - P2: Date range filtering for sales analytics
 - P3: Multi-language support
 - P3: Dark mode toggle for Farmer/Retailer views
+
+## Update: Search/Filter/Sort (Feb 2026)
+- [x] Farmer Produce Listing: search by name/farm, filter by grade + status, sortable columns (name/qty/grade/price), clear filters, item count
+- [x] Warehouse Stock Management: search orders by item name or retailer across pipeline columns
+- [x] Retailer Order Management: search by produce/farm, filter by category, sort by name/price_asc/price_desc/quantity
+- [x] Retailer Sales Tracking: search by item name, sortable columns (item/qty/revenue/date)
