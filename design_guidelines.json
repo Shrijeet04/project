@@ -1,0 +1,149 @@
+{
+  "theme_and_archetype": {
+    "domain": "Agriculture & Supply Chain Management",
+    "theme": "Dynamic (Role-Based Themes)",
+    "archetype_mapping": {
+      "Farmer": "Archetype 1 (Organic & Earthy) - Light Theme",
+      "Warehouse": "Archetype 4 (Swiss & High-Contrast) - Dark Theme",
+      "Retailer": "Archetype 3 (Pastel & Soft with Brutalist contrast) - Light Theme"
+    },
+    "reasoning": "A unified platform needs role-specific immersion. The Farmer view uses calming, organic tones suitable for agriculture. The Warehouse view shifts to a high-density, technical dark mode for control-room monitoring. The Retailer view uses vibrant, high-contrast aesthetics for quick, transactional commerce."
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Manrope",
+      "weight": "font-extrabold",
+      "tracking": "tracking-tight",
+      "sizes": {
+        "h1": "text-4xl sm:text-5xl",
+        "h2": "text-2xl sm:text-3xl",
+        "h3": "text-xl sm:text-2xl",
+        "widget_title": "text-lg sm:text-xl font-bold"
+      }
+    },
+    "body": {
+      "font_family": "IBM Plex Sans",
+      "weight": "font-normal",
+      "sizes": {
+        "base": "text-base",
+        "small": "text-sm",
+        "overline": "text-xs font-bold tracking-[0.2em] uppercase"
+      }
+    },
+    "rules": [
+      "No generic 'Inter' or 'Roboto'.",
+      "Overlines must be used for widget sub-labels.",
+      "Headlines strictly left-aligned unless centralized in a hero banner."
+    ]
+  },
+  "color_systems": {
+    "global_rules": [
+      "Never use pure black #000000 or generic gray #808080. Always tint neutrals.",
+      "Hover states MUST explicitly define text color (e.g., hover:bg-slate-900 hover:text-white)."
+    ],
+    "roles": {
+      "Farmer": {
+        "mode": "light",
+        "background": "bg-[#F7F9F4]",
+        "surface": "bg-white",
+        "primary": "bg-[#2E5C3A] text-white",
+        "primary_hover": "hover:bg-[#1F4028]",
+        "border": "border-[#E2E8DE]",
+        "text_main": "text-[#1C2B20]",
+        "text_muted": "text-[#5B7062]",
+        "accent_alert": "text-[#D95D39]"
+      },
+      "Warehouse": {
+        "mode": "dark",
+        "background": "bg-[#090A0F]",
+        "surface": "bg-[#12141D]",
+        "primary": "bg-[#2563EB] text-white",
+        "primary_hover": "hover:bg-[#1D4ED8]",
+        "border": "border-[#272B3B]",
+        "text_main": "text-[#F1F5F9]",
+        "text_muted": "text-[#94A3B8]",
+        "accent_warning": "text-[#FBBF24]",
+        "accent_critical": "text-[#EF4444]"
+      },
+      "Retailer": {
+        "mode": "light",
+        "background": "bg-[#FFFDF7]",
+        "surface": "bg-white",
+        "primary": "bg-[#EA580C] text-white",
+        "primary_hover": "hover:bg-[#C2410C]",
+        "border": "border-black/10",
+        "shadow_style": "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
+        "text_main": "text-[#0F172A]",
+        "text_muted": "text-[#475569]"
+      }
+    }
+  },
+  "layout_and_spacing": {
+    "grid_strategy": "MODE B: THE CONTROL ROOM GRID",
+    "base_grid": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+    "spacing_scale": "Use generous padding: p-6 or p-8 inside cards/widgets.",
+    "sidebar": "w-64 fixed left-0 top-0 h-screen border-r flex flex-col",
+    "main_content": "ml-64 p-8 min-h-screen",
+    "widget_spans": {
+      "summary_metric": "col-span-1",
+      "main_chart": "col-span-2 row-span-2 lg:col-span-3",
+      "feed_list": "col-span-1 row-span-2"
+    },
+    "surface_treatment": {
+      "Farmer": "Soft UI: rounded-2xl, gentle ambient shadow (shadow-sm).",
+      "Warehouse": "Grid Borders / Technical: rounded-none or rounded-sm, 1px solid border, subtle glowing hover states.",
+      "Retailer": "Neumorphic/Brutalist mix: rounded-lg, 2px solid border, hard black shadow offset."
+    }
+  },
+  "components_and_features": {
+    "global_state": "MANDATORY: Implement a top-level React Context (e.g., SupplyChainContext) holding activeRole, inventoryItems, globalOrders, and alerts. Ensure cross-role reactivity (Farmer adds -> Retailer sees -> Warehouse tracks).",
+    "role_switcher": "Place a persistent dropdown or toggle in the Sidebar header or Topnav to instantly switch between Farmer, Warehouse, and Retailer views, updating the global theme variables via a wrapper div.",
+    "charts": "Use Recharts. Retailer MUST have a PieChart (Customer Demand Insights). Warehouse can use an AreaChart (IoT Temp/Humidity over time). Farmer can use a BarChart (Harvest Output).",
+    "tables": "Use Shadcn Table for 'Stock Management' and 'Order Management'. Ensure clear empty states and sortable visual cues.",
+    "notifications": "Use 'sonner' for toast notifications triggered by state changes (e.g., 'Retailer ordered 50kg Tomatoes').",
+    "icons": "Use 'lucide-react' extensively for navigation, metrics, and actions."
+  },
+  "role_specific_modules": {
+    "Farmer": {
+      "metrics": ["Total Active Listings", "Recent Earnings", "Pending Orders"],
+      "forms": "Produce Listing Form (Name, Qty, Grade, Price). Use Shadcn Form/Input.",
+      "visuals": "Harvest Tracking Timeline (vertical list with status nodes)."
+    },
+    "Warehouse": {
+      "metrics": ["Capacity Utilization", "Spoilage Risk", "Active Shipments"],
+      "widgets": "IoT Monitoring Panel (Show Temp °C, Humidity % with color-coded status - green/yellow/red).",
+      "visuals": "Smart Space Allocation Map (a CSS Grid showing bays/pallets with occupancy colors)."
+    },
+    "Retailer": {
+      "metrics": ["Daily Sales", "Profit Margins", "Top-Selling Items"],
+      "widgets": "Customer Demand Recharts PieChart.",
+      "forms": "Order Interface (browse global inventory, add to cart, submit)."
+    }
+  },
+  "media_and_assets": {
+    "rules": "Never use generic placeholders. Use the provided images or lucide icons if no image is suitable. Add object-cover for all imagery.",
+    "images": {
+      "farmer_hero_1": "https://images.unsplash.com/photo-1768664355346-8c925e4c4e61?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwzfHxmYXJtZXIlMjBhZ3JpY3VsdHVyZSUyMG1vZGVybnxlbnwwfHx8fDE3NzYzMjI3MzB8MA&ixlib=rb-4.1.0&q=85",
+      "farmer_greenhouse": "https://images.unsplash.com/photo-1758524051910-60a8d324e110?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwyfHxmYXJtZXIlMjBhZ3JpY3VsdHVyZSUyMG1vZGVybnxlbnwwfHx8fDE3NzYzMjI3MzB8MA&ixlib=rb-4.1.0&q=85",
+      "warehouse_exterior": "https://images.unsplash.com/photo-1619070284836-e850273d69ac?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBsb2dpc3RpY3MlMjBtb2Rlcm58ZW58MHx8fHwxNzc2MzIyNzMwfDA&ixlib=rb-4.1.0&q=85",
+      "warehouse_pallets": "https://images.unsplash.com/photo-1773096324746-c08da58bc620?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwyfHx3YXJlaG91c2UlMjBsb2dpc3RpY3MlMjBtb2Rlcm58ZW58MHx8fHwxNzc2MzIyNzMwfDA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "testing_and_accessibility": {
+    "rules": [
+      "All interactive elements MUST include a data-testid attribute (e.g., data-testid='role-switcher-dropdown').",
+      "Ensure contrast ratios meet minimum 4.5:1 for normal text.",
+      "Include explicit focus states (focus:ring-2 focus:ring-offset-2)."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Initialize React with Tailwind, Recharts, Lucide-React, and Sonner.",
+    "Implement 'SupplyChainContext' to hold mock global state: inventory[], orders[], systemAlerts[], activeRole.",
+    "Create a layout shell with a Sidebar (or Topnav) containing the Role Switcher and navigation links.",
+    "Dynamically apply a CSS class to the root wrapper based on activeRole (e.g., 'theme-farmer', 'theme-warehouse') to scope Tailwind variables, or just use inline dynamic classes for the top container.",
+    "Build the 3 distinct dashboard views according to the 'role_specific_modules' and 'layout_and_spacing' grid instructions.",
+    "Ensure cross-role data flow works: when a Farmer adds an item to inventory via their form, the Retailer must be able to see it in their Order Management view, and once ordered, the Warehouse must see it in Incoming Stock.",
+    "Do not use generic typography; install and configure Manrope and IBM Plex Sans from Google Fonts.",
+    "Use 'p-6' or 'p-8' inside all major widget cards to adhere to the E1 generous spacing rule."
+  ]
+}
